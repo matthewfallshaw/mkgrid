@@ -29,34 +29,40 @@ fi
 function draw_grid() {
     local -i size=$1
     local color=$2
-    local increment=$size
+    local -i increment=$size
     local -i skip_factor=$3
     local -i strokewidth=$4
 
     local commands=()
 
-for ((i = increment; i < width; i += increment)); do
-    (( skip_factor > 0 && i % (increment * skip_factor) == 0 )) && continue
-    commands+=("-draw")
-    commands+=("line $i,0 $i,$height")
-done
+    # Draw vertical lines
+    for ((i = increment; i < width; i += increment)); do
+        (( skip_factor > 0 && i % (increment * skip_factor) == 0 )) && continue
+        commands+=("-draw")
+        commands+=("line $i,0 $i,$height")
+    done
 
-for ((i = increment; i < height; i += increment)); do
-    (( skip_factor > 0 && i % (increment * skip_factor) == 0 )) && continue
-    commands+=("-draw")
-    commands+=("line 0,$i $width,$i")
-done
+    # Draw horizontal lines
+    for ((i = increment; i < height; i += increment)); do
+        (( skip_factor > 0 && i % (increment * skip_factor) == 0 )) && continue
+        commands+=("-draw")
+        commands+=("line 0,$i $width,$i")
+    done
 
-    # Apply all drawing commands at once
-    convert background.png -fill none -stroke "$color" -strokewidth "$strokewidth" "${commands[@]}" background.png
-    update_progress ${#commands[@]}
+    draw_lines "${commands[@]}"
+}
+
+function draw_lines() {
+    convert background.png -fill none -stroke "$color" -strokewidth "$strokewidth" "$@"
+    update_progress $#
 }
 
 function convert_rgb_to_rgba() {
     local rgb_color=$1
     local alpha_value=$2
     # Replace 'rgb' with 'rgba' and append the alpha value before the closing parenthesis
-    local rgba_color=$(echo "$rgb_color" | sed -e 's/rgb/rgba/' -e "s/)/,${alpha_value})/")
+    local rgba_color
+    rgba_color=$(echo "$rgb_color" | sed -e 's/rgb/rgba/' -e "s/)/,${alpha_value})/")
     echo "$rgba_color"
 }
 
@@ -67,7 +73,8 @@ function draw_progress_bar() {
     local -i percentage=$((step * 100 / total))
     local -i bar_length=50
     local -i filled_length=$((percentage * bar_length / 100))
-    local bar=$(printf "%-${bar_length}s" "=")
+    local bar
+    bar=$(printf "%-${bar_length}s" "=")
     echo -ne "\r[${bar:0:$filled_length}$(printf ' %.0s' $(seq $filled_length $bar_length))] $percentage% completed"
 }
 
