@@ -1,0 +1,4 @@
+Pillow
+types-Pillow
+webcolors
+webcolors-stubs
